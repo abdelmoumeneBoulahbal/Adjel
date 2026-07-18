@@ -1,13 +1,207 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+}
+// ── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  USER
+  MERCHANT
+}
+
+enum AccountStatus {
+  REGISTERED        // signed up, browsing only
+  PENDING_DOCS      // started upgrade, uploading docs
+  PENDING_REVIEW    // docs uploaded, waiting admin
+  ACTIVE            // verified, subscribed, can buy
+  SUSPENDED         // debit failed or fraud
+  EXPIRED           // subscription ended
+  DECLINED          // docs rejected, can resubmit
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  ADDRESS_PROOF
+  EMPLOYMENT_CERT
+  SALARY_SLIP
+  SALARY_SCHEDULE
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MandateStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum LedgerType {
+  SUBSCRIPTION      // monthly credit top-up
+  PURCHASE          // client buys a product
+  REFUND            // reversed purchase
+  ADJUSTMENT        // admin manual correction
+}
+
+enum TransactionStatus {
+  COMPLETED
+  FAILED
+  PENDING
+}
+
+enum SettlementStatus {
+  PENDING           // purchase made, merchant not paid yet
+  SETTLED           // admin confirmed merchant received share
+  FAILED            // debit failed, merchant not paid
+}
+
+// ── Tables ─────────────────────────────────────────────────────────────────
+
+model SubscriptionTier {
+  id               Int       @id @default(autoincrement())
+  name             String    @unique  // Essentiel, Confort, Premium
+  monthlyFeeDZD    Float               // what client pays per month
+  creditLimitDZD   Float               // purchasing power granted
+  minSalaryDZD     Float               // minimum salary to qualify
+  maxSalaryDZD     Float?              // null = no upper limit (top tier)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  // relations
+  subscriberProfiles SubscriberProfile[]
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  fullName      String
+  email         String        @unique
+  phoneNumber   String        @unique
+  passwordHash  String
+  role          Role          @default(USER)
+  accountStatus AccountStatus @default(REGISTERED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // relations
+  subscriberProfile SubscriberProfile?
+  documents         Document[]
+  mandate           Mandate?
+  creditLedger      CreditLedger[]
+  transactions      Transaction[]
+}
+
+model SubscriberProfile {
+  id               Int       @id @default(autoincrement())
+  salaryAmount     Float               // extracted by admin from salary slips
+  salaryDay        Int                 // day of month salary arrives (e.g. 25)
+  salarySource     String              // employer name
+  creditLimitDZD   Float               // assigned after verification
+  creditUsedDZD    Float     @default(0) // spent this cycle
+  creditResetDate  DateTime            // next salary date = next reset
+  verifiedAt       DateTime?           // when admin approved all docs
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // relations
+  user             User      @relation(fields: [userId], references: [id])
+  userId           Int       @unique
+  tier             SubscriptionTier @relation(fields: [tierId], references: [id])
+  tierId           Int
+}
+
+model Document {
+  id          Int            @id @default(autoincrement())
+  type        DocumentType
+  fileUrl     String                  // Supabase Storage URL
+  status      DocumentStatus @default(PENDING)
+  adminNotes  String?                 // reason if rejected
+  uploadedAt  DateTime       @default(now())
+  reviewedAt  DateTime?               // when admin acted on it
+
+  // relations
+  user        User           @relation(fields: [userId], references: [id])
+  userId      Int
+}
+
+model Mandate {
+  id               Int           @id @default(autoincrement())
+  rib              String                  // bank account details
+  status           MandateStatus @default(PENDING)
+  signedAt         DateTime?               // when client signed electronically
+  ipAddress        String?                 // IP at time of signature
+  deviceInfo       String?                 // browser/device at signature
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // relations
+  user             User          @relation(fields: [userId], references: [id])
+  userId           Int           @unique
+}
+
+model CreditLedger {
+  id          Int          @id @default(autoincrement())
+  amount      Float        // positive = credit added, negative = debit
+  type        LedgerType
+  referenceId Int?         // transaction id if type = PURCHASE
+  note        String?      // admin note if type = ADJUSTMENT
+  createdAt   DateTime     @default(now())
+
+  // relations
+  user        User         @relation(fields: [userId], references: [id])
+  userId      Int
+
+}
+
+model Product {
+  id               Int       @id @default(autoincrement())
+  name             String
+  description      String?
+  wholesalePriceDZD Float              // what platform paid
+  priceAdP         Float               // what client pays in credits
+  stockQuantity    Int       @default(0)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // relations
+  merchantId       Int
+  merchant         Merchant  @relation(fields: [merchantId], references: [id])
+  transactions     Transaction[]
+}
+
+model Transaction {
+  id               Int               @id @default(autoincrement())
+  creditAmount     Float             // total credits charged to client
+  merchantShare    Float             // merchant's cut
+  status           TransactionStatus @default(PENDING)
+  settlementStatus SettlementStatus  @default(PENDING)
+  settledAt        DateTime?         // when admin marked merchant as paid
+  createdAt        DateTime          @default(now())
+
+  // relations
+  user             User              @relation(fields: [userId], references: [id])
+  userId           Int
+  product          Product           @relation(fields: [productId], references: [id])
+  productId        Int
+}
+
+model Merchant {
+  id             Int       @id @default(autoincrement())
+  businessName   String
+  email          String    @unique
+  phoneNumber    String    @unique
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // relations
+  products       Product[]
 }
