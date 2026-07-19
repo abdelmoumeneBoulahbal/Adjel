@@ -13,6 +13,19 @@ enum Role {
   MERCHANT
 }
 
+enum ProductType {
+  ELECTRONICS
+  FASHION
+  GROCERY
+  HOME
+  BEAUTY
+  SPORTS
+  TOYS
+  BOOKS
+  OTHER
+}
+
+
 enum AccountStatus {
   REGISTERED        // signed up, browsing only
   PENDING_DOCS      // started upgrade, uploading docs
@@ -44,7 +57,7 @@ enum MandateStatus {
   CANCELLED
 }
 
-enum LedgerType {
+enum WalletLogType {
   SUBSCRIPTION      // monthly credit top-up
   PURCHASE          // client buys a product
   REFUND            // reversed purchase
@@ -94,7 +107,7 @@ model User {
   subscriberProfile SubscriberProfile?
   documents         Document[]
   mandate           Mandate?
-  creditLedger      CreditLedger[]
+  walletLogs        WalletLog[]
   transactions      Transaction[]
 }
 
@@ -146,10 +159,10 @@ model Mandate {
   userId           Int           @unique
 }
 
-model CreditLedger {
+model WalletLog {
   id          Int          @id @default(autoincrement())
   amount      Float        // positive = credit added, negative = debit
-  type        LedgerType
+  type        WalletLogType
   referenceId Int?         // transaction id if type = PURCHASE
   note        String?      // admin note if type = ADJUSTMENT
   createdAt   DateTime     @default(now())
@@ -164,9 +177,8 @@ model Product {
   id               Int       @id @default(autoincrement())
   name             String
   description      String?
-  wholesalePriceDZD Float              // what platform paid
-  priceAdP         Float               // what client pays in credits
-  stockQuantity    Int       @default(0)
+  productPriceDZD  Float
+  productType      String      
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
