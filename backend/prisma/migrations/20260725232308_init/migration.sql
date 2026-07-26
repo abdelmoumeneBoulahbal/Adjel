@@ -1,5 +1,8 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER', 'MERCHANT');
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'CLIENT', 'MERCHANT');
+
+-- CreateEnum
+CREATE TYPE "ProductType" AS ENUM ('ELECTRONICS', 'FASHION', 'GROCERY', 'HOME', 'BEAUTY', 'SPORTS', 'TOYS', 'BOOKS', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "AccountStatus" AS ENUM ('REGISTERED', 'PENDING_DOCS', 'PENDING_REVIEW', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'DECLINED');
@@ -14,7 +17,7 @@ CREATE TYPE "DocumentStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE "MandateStatus" AS ENUM ('PENDING', 'ACTIVE', 'SUSPENDED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "LedgerType" AS ENUM ('SUBSCRIPTION', 'PURCHASE', 'REFUND', 'ADJUSTMENT');
+CREATE TYPE "WalletLogType" AS ENUM ('SUBSCRIPTION', 'PURCHASE', 'REFUND', 'ADJUSTMENT');
 
 -- CreateEnum
 CREATE TYPE "TransactionStatus" AS ENUM ('COMPLETED', 'FAILED', 'PENDING');
@@ -37,18 +40,18 @@ CREATE TABLE "SubscriptionTier" (
 );
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE "Client" (
     "id" SERIAL NOT NULL,
     "fullName" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phoneNumber" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'USER',
+    "role" "Role" NOT NULL DEFAULT 'CLIENT',
     "accountStatus" "AccountStatus" NOT NULL DEFAULT 'REGISTERED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Client_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -99,16 +102,16 @@ CREATE TABLE "Mandate" (
 );
 
 -- CreateTable
-CREATE TABLE "CreditLedger" (
+CREATE TABLE "WalletLog" (
     "id" SERIAL NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
-    "type" "LedgerType" NOT NULL,
+    "type" "WalletLogType" NOT NULL,
     "referenceId" INTEGER,
     "note" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "userId" INTEGER NOT NULL,
 
-    CONSTRAINT "CreditLedger_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "WalletLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -116,9 +119,8 @@ CREATE TABLE "Product" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "wholesalePriceDZD" DOUBLE PRECISION NOT NULL,
-    "priceAdP" DOUBLE PRECISION NOT NULL,
-    "stockQuantity" INTEGER NOT NULL DEFAULT 0,
+    "productPriceDZD" DOUBLE PRECISION NOT NULL,
+    "productType" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -159,10 +161,10 @@ CREATE TABLE "Merchant" (
 CREATE UNIQUE INDEX "SubscriptionTier_name_key" ON "SubscriptionTier"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "Client_email_key" ON "Client"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_phoneNumber_key" ON "User"("phoneNumber");
+CREATE UNIQUE INDEX "Client_phoneNumber_key" ON "Client"("phoneNumber");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SubscriberProfile_userId_key" ON "SubscriberProfile"("userId");
@@ -177,25 +179,25 @@ CREATE UNIQUE INDEX "Merchant_email_key" ON "Merchant"("email");
 CREATE UNIQUE INDEX "Merchant_phoneNumber_key" ON "Merchant"("phoneNumber");
 
 -- AddForeignKey
-ALTER TABLE "SubscriberProfile" ADD CONSTRAINT "SubscriberProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SubscriberProfile" ADD CONSTRAINT "SubscriberProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SubscriberProfile" ADD CONSTRAINT "SubscriberProfile_tierId_fkey" FOREIGN KEY ("tierId") REFERENCES "SubscriptionTier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Document" ADD CONSTRAINT "Document_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Document" ADD CONSTRAINT "Document_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Mandate" ADD CONSTRAINT "Mandate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Mandate" ADD CONSTRAINT "Mandate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CreditLedger" ADD CONSTRAINT "CreditLedger_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "WalletLog" ADD CONSTRAINT "WalletLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_merchantId_fkey" FOREIGN KEY ("merchantId") REFERENCES "Merchant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

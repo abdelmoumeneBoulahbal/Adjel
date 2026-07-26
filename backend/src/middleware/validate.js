@@ -28,7 +28,7 @@ export const validate = (schema) => (req, res, next) => {
   if (!result.success) {
     return error(
       res,
-      result.error.errors.map(e => ({
+      result.error.issues.map(e => ({
         field:   e.path[0],
         message: e.message,
       })),

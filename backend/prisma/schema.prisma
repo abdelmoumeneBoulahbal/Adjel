@@ -3,13 +3,133 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
-// ── Enums ──────────────────────────────────────────────────────────────────
+
+model SubscriptionTier {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  monthlyFeeDZD      Float
+  creditLimitDZD     Float
+  minSalaryDZD       Float
+  maxSalaryDZD       Float?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  subscriberProfiles SubscriberProfile[]
+}
+
+model Client {
+  id                Int                @id @default(autoincrement())
+  fullName          String
+  email             String             @unique
+  phoneNumber       String             @unique
+  passwordHash      String
+  role              Role               @default(CLIENT)
+  accountStatus     AccountStatus      @default(REGISTERED)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  documents         Document[]
+  mandate           Mandate?
+  subscriberProfile SubscriberProfile?
+  transactions      Transaction[]
+  walletLogs        WalletLog[]
+}
+
+model SubscriberProfile {
+  id              Int              @id @default(autoincrement())
+  salaryAmount    Float
+  salaryDay       Int
+  salarySource    String
+  creditLimitDZD  Float
+  creditUsedDZD   Float            @default(0)
+  creditResetDate DateTime
+  verifiedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userId          Int              @unique
+  tierId          Int
+  tier            SubscriptionTier @relation(fields: [tierId], references: [id])
+  user            Client           @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id         Int            @id @default(autoincrement())
+  type       DocumentType
+  fileUrl    String
+  status     DocumentStatus @default(PENDING)
+  adminNotes String?
+  uploadedAt DateTime       @default(now())
+  reviewedAt DateTime?
+  userId     Int
+  user       Client         @relation(fields: [userId], references: [id])
+}
+
+model Mandate {
+  id         Int           @id @default(autoincrement())
+  rib        String
+  status     MandateStatus @default(PENDING)
+  signedAt   DateTime?
+  ipAddress  String?
+  deviceInfo String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  userId     Int           @unique
+  user       Client        @relation(fields: [userId], references: [id])
+}
+
+model WalletLog {
+  id          Int           @id @default(autoincrement())
+  amount      Float
+  type        WalletLogType
+  referenceId Int?
+  note        String?
+  createdAt   DateTime      @default(now())
+  userId      Int
+  user        Client        @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id              Int           @id @default(autoincrement())
+  name            String
+  description     String?
+  productPriceDZD Float
+  productType     String
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  merchantId      Int
+  merchant        Merchant      @relation(fields: [merchantId], references: [id])
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id               Int               @id @default(autoincrement())
+  creditAmount     Float
+  merchantShare    Float
+  status           TransactionStatus @default(PENDING)
+  settlementStatus SettlementStatus  @default(PENDING)
+  settledAt        DateTime?
+  createdAt        DateTime          @default(now())
+  userId           Int
+  productId        Int
+  product          Product           @relation(fields: [productId], references: [id])
+  user             Client            @relation(fields: [userId], references: [id])
+}
+
+model Merchant {
+  id           Int       @id @default(autoincrement())
+  businessName String
+  email        String    @unique
+  phoneNumber  String    @unique
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  products     Product[]
+}
 
 enum Role {
   ADMIN
-  USER
+  CLIENT
   MERCHANT
 }
 
@@ -25,15 +145,14 @@ enum ProductType {
   OTHER
 }
 
-
 enum AccountStatus {
-  REGISTERED        // signed up, browsing only
-  PENDING_DOCS      // started upgrade, uploading docs
-  PENDING_REVIEW    // docs uploaded, waiting admin
-  ACTIVE            // verified, subscribed, can buy
-  SUSPENDED         // debit failed or fraud
-  EXPIRED           // subscription ended
-  DECLINED          // docs rejected, can resubmit
+  REGISTERED
+  PENDING_DOCS
+  PENDING_REVIEW
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  DECLINED
 }
 
 enum DocumentType {
@@ -58,10 +177,10 @@ enum MandateStatus {
 }
 
 enum WalletLogType {
-  SUBSCRIPTION      // monthly credit top-up
-  PURCHASE          // client buys a product
-  REFUND            // reversed purchase
-  ADJUSTMENT        // admin manual correction
+  SUBSCRIPTION
+  PURCHASE
+  REFUND
+  ADJUSTMENT
 }
 
 enum TransactionStatus {
@@ -71,149 +190,7 @@ enum TransactionStatus {
 }
 
 enum SettlementStatus {
-  PENDING           // purchase made, merchant not paid yet
-  SETTLED           // admin confirmed merchant received share
-  FAILED            // debit failed, merchant not paid
-}
-
-// ── Tables ─────────────────────────────────────────────────────────────────
-
-model SubscriptionTier {
-  id               Int       @id @default(autoincrement())
-  name             String    @unique  // Essentiel, Confort, Premium
-  monthlyFeeDZD    Float               // what client pays per month
-  creditLimitDZD   Float               // purchasing power granted
-  minSalaryDZD     Float               // minimum salary to qualify
-  maxSalaryDZD     Float?              // null = no upper limit (top tier)
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-
-  // relations
-  subscriberProfiles SubscriberProfile[]
-}
-
-model User {
-  id            Int           @id @default(autoincrement())
-  fullName      String
-  email         String        @unique
-  phoneNumber   String        @unique
-  passwordHash  String
-  role          Role          @default(USER)
-  accountStatus AccountStatus @default(REGISTERED)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  // relations
-  subscriberProfile SubscriberProfile?
-  documents         Document[]
-  mandate           Mandate?
-  walletLogs        WalletLog[]
-  transactions      Transaction[]
-}
-
-model SubscriberProfile {
-  id               Int       @id @default(autoincrement())
-  salaryAmount     Float               // extracted by admin from salary slips
-  salaryDay        Int                 // day of month salary arrives (e.g. 25)
-  salarySource     String              // employer name
-  creditLimitDZD   Float               // assigned after verification
-  creditUsedDZD    Float     @default(0) // spent this cycle
-  creditResetDate  DateTime            // next salary date = next reset
-  verifiedAt       DateTime?           // when admin approved all docs
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  // relations
-  user             User      @relation(fields: [userId], references: [id])
-  userId           Int       @unique
-  tier             SubscriptionTier @relation(fields: [tierId], references: [id])
-  tierId           Int
-}
-
-model Document {
-  id          Int            @id @default(autoincrement())
-  type        DocumentType
-  fileUrl     String                  // Supabase Storage URL
-  status      DocumentStatus @default(PENDING)
-  adminNotes  String?                 // reason if rejected
-  uploadedAt  DateTime       @default(now())
-  reviewedAt  DateTime?               // when admin acted on it
-
-  // relations
-  user        User           @relation(fields: [userId], references: [id])
-  userId      Int
-}
-
-model Mandate {
-  id               Int           @id @default(autoincrement())
-  rib              String                  // bank account details
-  status           MandateStatus @default(PENDING)
-  signedAt         DateTime?               // when client signed electronically
-  ipAddress        String?                 // IP at time of signature
-  deviceInfo       String?                 // browser/device at signature
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  // relations
-  user             User          @relation(fields: [userId], references: [id])
-  userId           Int           @unique
-}
-
-model WalletLog {
-  id          Int          @id @default(autoincrement())
-  amount      Float        // positive = credit added, negative = debit
-  type        WalletLogType
-  referenceId Int?         // transaction id if type = PURCHASE
-  note        String?      // admin note if type = ADJUSTMENT
-  createdAt   DateTime     @default(now())
-
-  // relations
-  user        User         @relation(fields: [userId], references: [id])
-  userId      Int
-
-}
-
-model Product {
-  id               Int       @id @default(autoincrement())
-  name             String
-  description      String?
-  productPriceDZD  Float
-  productType      String      
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  // relations
-  merchantId       Int
-  merchant         Merchant  @relation(fields: [merchantId], references: [id])
-  transactions     Transaction[]
-}
-
-model Transaction {
-  id               Int               @id @default(autoincrement())
-  creditAmount     Float             // total credits charged to client
-  merchantShare    Float             // merchant's cut
-  status           TransactionStatus @default(PENDING)
-  settlementStatus SettlementStatus  @default(PENDING)
-  settledAt        DateTime?         // when admin marked merchant as paid
-  createdAt        DateTime          @default(now())
-
-  // relations
-  user             User              @relation(fields: [userId], references: [id])
-  userId           Int
-  product          Product           @relation(fields: [productId], references: [id])
-  productId        Int
-}
-
-model Merchant {
-  id             Int       @id @default(autoincrement())
-  businessName   String
-  email          String    @unique
-  phoneNumber    String    @unique
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // relations
-  products       Product[]
+  PENDING
+  SETTLED
+  FAILED
 }
