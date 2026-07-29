@@ -71,7 +71,7 @@ export const login = async (req, res) => {
             });
         }
 
-
+        console.log(error);
         return res.status(500).json({
             success: false,
             message: "Internal server error",
@@ -96,6 +96,8 @@ export const me = async (req, res) => {
 
 
     } catch (error) {
+
+        console.log(error);
 
         if (error.message === "USER_NOT_FOUND") {
             return res.status(404).json({

@@ -142,8 +142,7 @@ export const getMe = async (clientId) => {
         },
         select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
             email: true,
             phoneNumber: true,
             createdAt: true,
