@@ -13,14 +13,14 @@ import { protect } from "../../../middleware/auth.js";
 
 import {
     registerSchema,
-    loginSchema,
+    loginSchema, 
 } from "../../../middleware/validate.js";
 
 
 const router = Router();
 
 
-// Register client
+// Register merchant
 router.post(
     "/register",
     validate(registerSchema),
@@ -28,7 +28,7 @@ router.post(
 );
 
 
-// Login client
+// Login merchant
 router.post(
     "/login",
     validate(loginSchema),
@@ -36,7 +36,7 @@ router.post(
 );
 
 
-// Get current client
+// Get current merchant
 router.get(
     "/me",
     protect,

@@ -1,6 +1,6 @@
 import {
-    registerClient,
-    loginClient,
+    registerMerchant,
+    loginMerchant,
     getMe,
 } from "./merchant.service.js";
 
@@ -9,7 +9,7 @@ import {
 export const register = async (req, res) => {
     try {
 
-        const user = await registerClient(req.body);
+        const user = await registerMerchant(req.body);
 
 
         return res.status(201).json({
@@ -52,7 +52,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
 
-        const result = await loginClient(req.body);
+        const result = await loginMerchant(req.body);
 
 
         return res.status(200).json({

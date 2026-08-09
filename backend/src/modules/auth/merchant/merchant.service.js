@@ -3,78 +3,74 @@ import prisma from "../../../config/prisma.js";
 import { generateToken } from "../../../utils/jwt.js";
 
 
-// Register a new client
-export const registerClient = async ({
+// Register a new merchant
+export const registerMerchant = async ({
     firstName,
     lastName,
+    shopName,
     email,
     phoneNumber,
     password,
 }) => {
 
-    // Check if email already exists
-    const existingEmail = await prisma.client.findUnique({
-        where: {
-            email,
-        },
-    });
+    const [
+        existingClientEmail,
+        existingMerchantEmail,
+        existingClientPhone,
+        existingMerchantPhone,
+    ] = await Promise.all([
+        prisma.client.findUnique({ where: { email } }),
+        prisma.merchant.findUnique({ where: { email } }),
+        prisma.client.findUnique({ where: { phoneNumber } }),
+        prisma.merchant.findUnique({ where: { phoneNumber } }),
+    ]);
 
-    if (existingEmail) {
+    if (existingClientEmail || existingMerchantEmail) {
         throw new Error("EMAIL_ALREADY_EXISTS");
     }
 
-
-    // Check if phone number already exists
-    const existingPhone = await prisma.client.findUnique({
-        where: {
-            phoneNumber,
-        },
-    });
-
-    if (existingPhone) {
+    if (existingClientPhone || existingMerchantPhone) {
         throw new Error("PHONE_ALREADY_EXISTS");
     }
-
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-
-    // Combine first and last name
-    const fullName = `${firstName} ${lastName}`;
-
-
-    // Create client
-    const client = await prisma.client.create({
+    // Create merchant
+    const merchant = await prisma.merchant.create({
         data: {
-            fullName,
+            firstName,
+            lastName,
+            shopName,
             email,
             phoneNumber,
-            passwordHash,
+            passwordHash
         },
         select: {
             id: true,
-            fullName: true,
+            firstName: true,
+            lastName: true,
+            shopName: true,
             email: true,
             phoneNumber: true,
-            createdAt: true,
+            createdAt: true
         },
     });
 
 
-    return client;
+    return merchant;
 };
 
 
 
-// Login client
-export const loginClient = async ({
+// Login merchant
+export const loginMerchant = async ({
     identifier,
     password,
 }) => {
 
-    // Find client by email OR phone number
-    const client = await prisma.client.findFirst({
+    // Find merchant by email OR phone number
+    const merchant = await prisma.merchant.findFirst({
         where: {
             OR: [
                 {
@@ -89,7 +85,7 @@ export const loginClient = async ({
 
 
     // Same error for security reasons
-    if (!client) {
+    if (!merchant) {
         throw new Error("INVALID_CREDENTIALS");
     }
 
@@ -97,7 +93,7 @@ export const loginClient = async ({
     // Compare password
     const passwordMatch = await bcrypt.compare(
         password,
-        client.passwordHash
+        merchant.passwordHash
     );
 
 
@@ -108,24 +104,25 @@ export const loginClient = async ({
 
     // Generate JWT
     const token = generateToken({
-        id: client.id,
-        type: "CLIENT",
+        id: merchant.id,
+        type: "MERCHANT",
     });
 
 
     // Remove passwordHash
-    const safeClient = {
-        id: client.id,
-        firstName: client.firstName,
-        lastName: client.lastName,
-        email: client.email,
-        phoneNumber: client.phoneNumber,
-        createdAt: client.createdAt,
+    const safeMerchant = {
+        id: merchant.id,
+        firstName: merchant.firstName,
+        lastName: merchant.lastName,
+        shopName: merchant.shopName,
+        email: merchant.email,
+        phoneNumber: merchant.phoneNumber,
+        createdAt: merchant.createdAt,
     };
 
 
     return {
-        client: safeClient,
+        merchant: safeMerchant,
         token,
     };
 };
@@ -133,16 +130,18 @@ export const loginClient = async ({
 
 
 
-// Get current client
-export const getMe = async (clientId) => {
+// Get current merchant
+export const getMe = async (merchantId) => {
 
-    const client = await prisma.client.findUnique({
+    const merchant = await prisma.merchant.findUnique({
         where: {
-            id: clientId,
+            id: merchantId,
         },
         select: {
             id: true,
-            fullName: true,
+            firstName: true,
+            lastName: true,
+            shopName: true,
             email: true,
             phoneNumber: true,
             createdAt: true,
@@ -150,10 +149,10 @@ export const getMe = async (clientId) => {
     });
 
 
-    if (!client) {
-        throw new Error("CLIENT_NOT_FOUND");
+    if (!merchant) {
+        throw new Error("MERCHANT_NOT_FOUND");
     }
 
 
-    return client;
+    return merchant;
 };
