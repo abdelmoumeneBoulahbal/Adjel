@@ -126,28 +126,33 @@ export const loginMerchant = async ({
 
 
 
-// Get current merchant
 export const getMe = async (merchantId) => {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: {
+      id:           true,
+      firstName:    true,
+      lastName:     true,
+      email:        true,
+      phoneNumber:  true,
+      role:         true,
+      accountStatus: true,
+      businessName:  true,
+      businessAddress: true,
+      createdAt:    true,
 
-    const merchant = await prisma.merchant.findUnique({
-        where: {
-            id: merchantId,
-        },
+      documents: {
         select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phoneNumber: true,
-            createdAt: true,
-        },
-    });
-
-
-    if (!merchant) {
-        throw new Error("MERCHANT_NOT_FOUND");
+          id:      true,
+          type:    true,
+          status:  true,
+          fileUrl: true,
+        }
+      }
     }
+  })
 
+  if (!merchant) throw new Error('MERCHANT_NOT_FOUND')
 
-    return merchant;
-};
+  return merchant
+}

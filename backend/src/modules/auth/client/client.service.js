@@ -129,31 +129,31 @@ export const loginClient = async ({
     };
 };
 
-
-
-
 // Get current client
 export const getMe = async (clientId) => {
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: {
+      id:            true,
+      firstName:     true,
+      lastName:      true,
+      email:         true,
+      phoneNumber:   true,
+      role:          true,
+      accountStatus: true,
+      createdAt:     true,
 
-    const client = await prisma.client.findUnique({
-        where: {
-            id: clientId,
-        },
+      documents: {
         select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phoneNumber: true,
-            createdAt: true,
-        },
-    });
-
-
-    if (!client) {
-        throw new Error("CLIENT_NOT_FOUND");
+          id:     true,
+          type:   true,
+          status: true,
+        }
+      },
     }
+  })
 
+  if (!client) throw new Error('CLIENT_NOT_FOUND')
 
-    return client;
-};
+  return client
+}
