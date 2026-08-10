@@ -40,21 +40,20 @@ export const registerClient = async ({
     const passwordHash = await bcrypt.hash(password, 12);
 
 
-    // Combine first and last name
-    const fullName = `${firstName} ${lastName}`;
-
 
     // Create client
     const client = await prisma.client.create({
         data: {
-            fullName,
+            firstName,
+            lastName,
             email,
             phoneNumber,
             passwordHash,
         },
         select: {
             id: true,
-            fullName: true,
+            firstName: true,
+            lastName: true,
             email: true,
             phoneNumber: true,
             createdAt: true,
@@ -142,7 +141,8 @@ export const getMe = async (clientId) => {
         },
         select: {
             id: true,
-            fullName: true,
+            firstName: true,
+            lastName: true,
             email: true,
             phoneNumber: true,
             createdAt: true,

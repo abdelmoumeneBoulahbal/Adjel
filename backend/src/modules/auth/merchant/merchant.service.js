@@ -7,7 +7,6 @@ import { generateToken } from "../../../utils/jwt.js";
 export const registerMerchant = async ({
     firstName,
     lastName,
-    shopName,
     email,
     phoneNumber,
     password,
@@ -41,7 +40,6 @@ export const registerMerchant = async ({
         data: {
             firstName,
             lastName,
-            shopName,
             email,
             phoneNumber,
             passwordHash
@@ -50,7 +48,6 @@ export const registerMerchant = async ({
             id: true,
             firstName: true,
             lastName: true,
-            shopName: true,
             email: true,
             phoneNumber: true,
             createdAt: true
@@ -114,7 +111,6 @@ export const loginMerchant = async ({
         id: merchant.id,
         firstName: merchant.firstName,
         lastName: merchant.lastName,
-        shopName: merchant.shopName,
         email: merchant.email,
         phoneNumber: merchant.phoneNumber,
         createdAt: merchant.createdAt,
@@ -141,7 +137,6 @@ export const getMe = async (merchantId) => {
             id: true,
             firstName: true,
             lastName: true,
-            shopName: true,
             email: true,
             phoneNumber: true,
             createdAt: true,
