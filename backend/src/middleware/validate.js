@@ -22,6 +22,17 @@ export const loginSchema = z.object({
   password:   z.string().min(1, 'Password is required'),
 })
 
+
+export const documentUploadSchema = z.object({
+  type: z.enum([
+    'NATIONAL_ID',
+    'ADDRESS_PROOF',
+    'EMPLOYMENT_CERT',
+    'SALARY_SLIP',
+    'SALARY_SCHEDULE',
+  ], { message: 'Invalid document type' })
+})
+
 // ── Validate middleware ───────────────────────────────────
 export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body)
