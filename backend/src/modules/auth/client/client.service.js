@@ -108,7 +108,7 @@ export const loginClient = async ({
     // Generate JWT
     const token = generateToken({
         id: client.id,
-        type: "CLIENT",
+        role: "CLIENT",
     });
 
 

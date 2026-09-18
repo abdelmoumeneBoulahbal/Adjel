@@ -23,15 +23,24 @@ export const loginSchema = z.object({
 })
 
 
-export const documentUploadSchema = z.object({
+export const clientDocumentUploadSchema = z.object({
   type: z.enum([
     'NATIONAL_ID',
     'ADDRESS_PROOF',
     'EMPLOYMENT_CERT',
     'SALARY_SLIP',
     'SALARY_SCHEDULE',
-  ], { message: 'Invalid document type' })
+  ], { message: 'Invalid clientdocument type' })
 })
+
+export const merchantDocumentUploadSchema = z.object({
+  type: z.enum([
+    'BUSINESS_REGISTRATION',
+    'TAX_CERTIFICATE',
+    'BUSINESS_ADDRESS_PROOF',
+  ], { message: 'Invalid merchantdocument type' })
+})
+
 
 // ── Validate middleware ───────────────────────────────────
 export const validate = (schema) => (req, res, next) => {

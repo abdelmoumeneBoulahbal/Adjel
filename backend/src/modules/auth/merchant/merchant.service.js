@@ -102,7 +102,7 @@ export const loginMerchant = async ({
     // Generate JWT
     const token = generateToken({
         id: merchant.id,
-        type: "MERCHANT",
+        role: "MERCHANT",
     });
 
 

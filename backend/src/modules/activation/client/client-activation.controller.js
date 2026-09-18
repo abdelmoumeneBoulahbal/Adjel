@@ -1,9 +1,13 @@
 import { uploadDocument, getDocuments } from './client-activation.service.js'
-import { success, error }               from '../../utils/response.js'
+import { success, error }               from '../../../utils/response.js'
 
 // ── Upload document ────────────────────────────────────────────────────────
 export const uploadDoc = async (req, res) => {
   try {
+    console.log('\x1b[36m\n-> Controller:\x1b[0m')
+    console.log('User ID from token:', req.user.id, '\nRole:', req.user.role, '\nRequest body:', req.body, '\nFile info:', req.file)
+    console.log('Upload document request received for user:', req.user.id, '\nwith file:', req.file?.originalname, '\nand type:', req.body.type)
+
     // check file exists
     if (!req.file) {
       return error(res, 'No file provided', 400)
@@ -15,7 +19,7 @@ export const uploadDoc = async (req, res) => {
     }
 
     // check file size
-    if (req.file.size > 5 * 1024 * 1024) {
+  if (req.file.size > 5 * 1024 * 1024) {
       return error(res, 'File must be under 5MB', 400)
     }
 
@@ -26,7 +30,7 @@ export const uploadDoc = async (req, res) => {
 
   } catch (err) {
     if (err.message === 'UPLOAD_FAILED') {
-      return error(res, 'File upload failed, please try again', 500)
+      return error(res, 'Failed to upload document', 500)
     }
     return error(res, 'Something went wrong', 500)
   }

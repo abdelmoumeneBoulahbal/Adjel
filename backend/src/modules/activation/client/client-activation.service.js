@@ -1,9 +1,13 @@
-import prisma   from '../../config/prisma.js'
-import supabase from '../../config/supabase.js'
+import prisma   from '../../../config/prisma.js'
+import supabase from '../../../config/supabase.js'
 
 // ── Upload file to Supabase Storage ───────────────────────────────────────
 const uploadToStorage = async (clientId, type, file) => {
   const path = `clients/${clientId}/${type}.pdf`
+
+  console.log('\x1b[36m\n-> Service Uploading file to Supabase Storage\x1b[0m')
+  console.log('Uploading file to Supabase Storage at path:', path, '\nwith mimetype:', file.mimetype, '\nand size:', file.size)
+
 
   const { error } = await supabase.storage
     .from('documents')
@@ -12,7 +16,10 @@ const uploadToStorage = async (clientId, type, file) => {
       upsert:      true,
     })
 
-  if (error) throw new Error('UPLOAD_FAILED')
+  if (error) {
+    console.error('\x1b[31mSUPABASE STORAGE ERROR:\x1b[0m', error)
+    throw new Error('UPLOAD_FAILED')
+  }
 
   const { data } = supabase.storage
     .from('documents')
@@ -24,6 +31,8 @@ const uploadToStorage = async (clientId, type, file) => {
 // ── Upload document ────────────────────────────────────────────────────────
 export const uploadDocument = async (clientId, type, file) => {
   const fileUrl = await uploadToStorage(clientId, type, file)
+
+  console.log('\nFile uploaded to Supabase Storage, public URL:', fileUrl)
 
   const existing = await prisma.clientDocument.findFirst({
     where: { clientId, type }

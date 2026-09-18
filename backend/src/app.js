@@ -4,8 +4,11 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 
 import clientAuthRoutes from "./modules/auth/client/client.routes.js"
-import merchantAuthRoutes from "./modules/auth/merchant/merchant.routes.js"
 import clientActivationRoutes from "./modules/activation/client/client-activation.routes.js"
+
+
+import merchantAuthRoutes from "./modules/auth/merchant/merchant.routes.js"
+import merchantActivationRoutes from "./modules/activation/merchant/merchant-activation.routes.js"
 
 const app = express()
 
@@ -26,6 +29,7 @@ app.get('/health', (req, res) => {
 app.use("/api/auth/client", clientAuthRoutes)
 app.use("/api/auth/merchant", merchantAuthRoutes)
 app.use("/api/client/documents", clientActivationRoutes)
+app.use("/api/merchant/documents", merchantActivationRoutes)
 
 
 export default app
