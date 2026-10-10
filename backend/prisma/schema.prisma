@@ -97,8 +97,22 @@ enum ContractType {
   TWELVE_MONTHS
 }
 
-// ── Client ─────────────────────────────────────────────────────────────────
+model Admin {
+  id           Int      @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  username     String   @unique
+  phoneNumber  String   @unique
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
 
+
+// ── Client ─────────────────────────────────────────────────────────────────
 model Client {
   id            Int           @id @default(autoincrement())
   firstName     String
@@ -238,7 +252,6 @@ model MerchantDocument {
 }
 
 // ── Mandate (client only) ──────────────────────────────────────────────────
-
 model Mandate {
   id          Int           @id @default(autoincrement())
   rib         String
@@ -254,7 +267,6 @@ model Mandate {
 }
 
 // ── Wallet Log (client only) ───────────────────────────────────────────────
-
 model WalletLog {
   id          Int           @id @default(autoincrement())
   amount      Float
@@ -285,7 +297,6 @@ model Product {
 }
 
 // ── Transaction ────────────────────────────────────────────────────────────
-
 model Transaction {
   id               Int               @id @default(autoincrement())
   creditAmount     Float
@@ -303,7 +314,6 @@ model Transaction {
 }
 
 // ── Merchant Earning ───────────────────────────────────────────────────────
-
 model MerchantEarning {
   id               Int              @id @default(autoincrement())
   amount           Float
