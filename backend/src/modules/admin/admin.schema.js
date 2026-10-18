@@ -1,7 +1,7 @@
 // Admin schema seperated from the main schema file for better organization and maintainability.
 import { z } from 'zod'
 
-export const adminSchema = z.object({  
+export const adminSignupSchema = z.object({  
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
     email: z.email({ error: 'Invalid email format' }),
     phoneNumber: z.string()
@@ -13,4 +13,10 @@ export const adminSchema = z.object({
         .regex(/[0-9]/, 'Password must contain at least one number')
         .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character'),
     role: z.enum(['SUPER_ADMIN', 'ADMIN'], { message: 'Invalid role' }),
+})
+
+
+export const adminLoginSchema = z.object({
+    email: z.email({ error: 'Invalid email format' }),
+    password: z.string().min(1, 'Password is required'),
 })
