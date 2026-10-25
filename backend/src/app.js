@@ -10,6 +10,9 @@ import clientActivationRoutes from "./modules/activation/client/client-activatio
 import merchantAuthRoutes from "./modules/auth/merchant/merchant.routes.js"
 import merchantActivationRoutes from "./modules/activation/merchant/merchant-activation.routes.js"
 
+import adminAuthRoutes from "./modules/admin/admin-auth.routes.js"
+import adminRoutes from "./modules/admin/admin.routes.js"
+
 const app = express()
 
 // ── Middleware ──────────────────────────────────────────
@@ -30,6 +33,9 @@ app.use("/api/auth/client", clientAuthRoutes)
 app.use("/api/auth/merchant", merchantAuthRoutes)
 app.use("/api/client/documents", clientActivationRoutes)
 app.use("/api/merchant/documents", merchantActivationRoutes)
+
+app.use("/api/admin/auth", adminAuthRoutes)
+app.use("/api/admin", adminRoutes)
 
 
 export default app

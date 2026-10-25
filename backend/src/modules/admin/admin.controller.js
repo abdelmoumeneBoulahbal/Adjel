@@ -1,34 +1,12 @@
-import prisma from '../../../config/prisma.js'
+import { getAllUsers } from './admin.service.js'
+import { success, error } from '../../utils/response.js'
 
-export const getAllUsers = async ({ page = 1, limit = 20 }) => {
-  const skip = (Number(page) - 1) * Number(limit)
-
-  const [clients, total] = await Promise.all([
-    prisma.client.findMany({
-      skip,
-      take: Number(limit),
-      select: {
-        id:            true,
-        firstName:     true,
-        lastName:      true,
-        email:         true,
-        phoneNumber:   true,
-        accountStatus: true,
-        createdAt:     true,
-        
-      },
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.client.count(),
-  ])
-
-  return {
-    clients,
-    pagination: {
-      page:       Number(page),
-      limit:      Number(limit),
-      total,
-      totalPages: Math.ceil(total / Number(limit)),
-    }
+export const getAllUsersController = async (req, res) => {
+  try {
+    const { page, limit } = req.query
+    const data = await getAllUsers({ page, limit })
+    return success(res, data, 'Users retrieved', 200)
+  } catch (err) {
+    return error(res, 'Something went wrong', 500)
   }
 }

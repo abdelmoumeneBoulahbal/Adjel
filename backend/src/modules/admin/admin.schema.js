@@ -17,6 +17,6 @@ export const adminSignupSchema = z.object({
 
 
 export const adminLoginSchema = z.object({
-    email: z.email({ error: 'Invalid email format' }),
+    username: z.string().min(3, 'Username is required'),
     password: z.string().min(1, 'Password is required'),
 })

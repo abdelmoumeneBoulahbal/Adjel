@@ -9,17 +9,23 @@ const rl = createInterface({ input: stdin, output: stdout })
 
 async function main() {
   try {
-    const fullName = await rl.question('Full name: ')
+    const firstName = (await rl.question('First name: '))
+      .trim()
+      .toLowerCase()
+
+    const lastName = (await rl.question('Last name: '))
+      .trim()
+      .toLowerCase()
     const email = (await rl.question('Email: ')).trim().toLowerCase()
     const phoneNumber = await rl.question('Phone number: ')
     const username = await rl.question('Username: ')
     const roleInput = await rl.question(
-      'Role (ADMIN / SUPER_ADMIN, default ADMIN): '
+      'Role (default ADMIN): '
     )
 
     const role = roleInput.trim() || 'ADMIN'
 
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+    if (!['ADMIN'].includes(role)) {
       throw new Error('Invalid Admin role')
     }
 
@@ -31,7 +37,8 @@ async function main() {
     }
 
     if (
-      fullName.trim().length < 2 ||
+      firstName.length < 2 ||
+      lastName.length < 2 ||
       !email ||
       !phoneNumber.trim() ||
       username.trim().length < 3
@@ -58,7 +65,8 @@ async function main() {
 
     const admin = await prisma.admin.create({
       data: {
-        fullName: fullName.trim(),
+        firstName,
+        lastName,
         email,
         phoneNumber: phoneNumber.trim(),
         username: username.trim(),
@@ -67,7 +75,8 @@ async function main() {
       },
       select: {
         id: true,
-        fullName: true,
+        firstName: true,
+        lastName: true,
         email: true,
         username: true,
         role: true,
