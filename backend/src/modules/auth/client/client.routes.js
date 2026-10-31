@@ -10,6 +10,7 @@ import {
 
 import { validate } from "../../../middleware/validate.js";
 import { protect } from "../../../middleware/auth.js";
+import { requireRole } from "../../../middleware/role.js";
 
 import {
     registerSchema,
@@ -40,6 +41,7 @@ router.post(
 router.get(
     "/me",
     protect,
+    requireRole("CLIENT"),
     me
 );
 
