@@ -1,45 +1,35 @@
-import prisma   from '../../../config/prisma.js'
-import supabase from '../../../config/supabase.js'
+import prisma from '../../../config/prisma.js'
+import { uploadFile, withSignedUrl, withSignedUrls } from '../../../utils/storage.js'
 
 // ── Upload file to Supabase Storage ───────────────────────────────────────
+// Returns the file's path in the bucket (e.g. merchants/5/TAX_CERTIFICATE.pdf).
+// Same story as on the client side: no more public URLs, business papers
+// shouldn't be readable by anyone who stumbles on a link.
 const uploadToStorage = async (merchantId, type, file) => {
   const path = `merchants/${merchantId}/${type}.pdf`
 
   console.log('\x1b[36m\n-> Service Uploading file to Supabase Storage\x1b[0m')
   console.log('Uploading file to Supabase Storage at path:', path, '\nwith mimetype:', file.mimetype, '\nand size:', file.size)
 
-
-  const { error } = await supabase.storage
-    .from('documents')
-    .upload(path, file.buffer, {
-      contentType: file.mimetype,
-      upsert:      true,
-    })
-
-  if (error) {
-    console.error('\x1b[31mSUPABASE STORAGE ERROR:\x1b[0m', error)
-    throw new Error('UPLOAD_FAILED')
-  }
-
-  const { data } = supabase.storage
-    .from('documents')
-    .getPublicUrl(path)
-
-  return data.publicUrl
+  return await uploadFile(path, file)
 }
 
 // ── Upload document ────────────────────────────────────────────────────────
 export const uploadDocument = async (merchantId, type, file) => {
+  // heads up: despite the name, fileUrl now stores the storage path, not a link.
+  // Kept the column name so we don't need a migration just for this.
   const fileUrl = await uploadToStorage(merchantId, type, file)
 
-  console.log('\nFile uploaded to Supabase Storage, public URL:', fileUrl)
+  console.log('\nFile uploaded to Supabase Storage, path:', fileUrl)
 
   const existing = await prisma.merchantDocument.findFirst({
     where: { merchantId, type }
   })
 
+  let doc
+
   if (existing) {
-    return await prisma.merchantDocument.update({
+    doc = await prisma.merchantDocument.update({
       where: { id: existing.id },
       data: {
         fileUrl,
@@ -48,16 +38,19 @@ export const uploadDocument = async (merchantId, type, file) => {
         adminNotes: null,
       }
     })
+  } else {
+    doc = await prisma.merchantDocument.create({
+      data: { merchantId, type, fileUrl, status: 'PENDING' }
+    })
   }
 
-  return await prisma.merchantDocument.create({
-    data: { merchantId, type, fileUrl, status: 'PENDING' }
-  })
+  // give the merchant a working (temporary) link back instead of the raw path
+  return await withSignedUrl(doc)
 }
 
 // ── Get all merchant documents ───────────────────────────────────────────────
 export const getDocuments = async (merchantId) => {
-  return await prisma.merchantDocument.findMany({
+  const docs = await prisma.merchantDocument.findMany({
     where:   { merchantId },
     select: {
       id:         true,
@@ -69,4 +62,8 @@ export const getDocuments = async (merchantId) => {
     },
     orderBy: { uploadedAt: 'asc' }
   })
+
+  // links are generated fresh on every request, so if one expired
+  // just call this endpoint again to get a new one
+  return await withSignedUrls(docs)
 }

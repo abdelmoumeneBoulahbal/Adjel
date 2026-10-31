@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../../config/prisma.js";
 import { generateToken } from "../../../utils/jwt.js";
+import { withSignedUrls } from "../../../utils/storage.js";
 
 
 // Register a new merchant
@@ -153,6 +154,10 @@ export const getMe = async (merchantId) => {
   })
 
   if (!merchant) throw new Error('MERCHANT_NOT_FOUND')
+
+  // documents only store a storage path now, so turn them into
+  // temporary links before sending them back
+  merchant.documents = await withSignedUrls(merchant.documents)
 
   return merchant
 }
